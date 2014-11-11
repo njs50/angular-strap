@@ -1,6 +1,6 @@
 /**
  * angular-strap
- * @version v2.1.3 - 2014-11-06
+ * @version v2.1.4-rc1 - 2014-11-11
  * @link http://mgcrea.github.io/angular-strap
  * @author Olivier Louvignes (olivier@mg-crea.com)
  * @license MIT License, http://www.opensource.org/licenses/MIT
@@ -32,7 +32,7 @@ angular.module('mgcrea.ngStrap.select', ['mgcrea.ngStrap.tooltip', 'mgcrea.ngStr
       iconCheckmark: 'glyphicon glyphicon-ok'
     };
 
-    this.$get = ["$window", "$document", "$rootScope", "$tooltip", function($window, $document, $rootScope, $tooltip) {
+    this.$get = ["$window", "$document", "$rootScope", "$tooltip", "$timeout", function($window, $document, $rootScope, $tooltip, $timeout) {
 
       var bodyEl = angular.element($window.document.body);
       var isNative = /(ip(a|o)d|iphone|android)/ig.test($window.navigator.userAgent);
@@ -204,10 +204,14 @@ angular.module('mgcrea.ngStrap.select', ['mgcrea.ngStrap.tooltip', 'mgcrea.ngStr
           if(options.multiple) {
             $select.$element.addClass('select-multiple');
           }
-          $select.$element.on(isTouch ? 'touchstart' : 'mousedown', $select.$onMouseDown);
-          if(options.keyboard) {
-            element.on('keydown', $select.$onKeyDown);
-          }
+          // use timeout to hookup the events to prevent 
+          // event bubbling from being processed imediately. 
+          $timeout(function() {
+            $select.$element.on(isTouch ? 'touchstart' : 'mousedown', $select.$onMouseDown);
+            if(options.keyboard) {
+              element.on('keydown', $select.$onKeyDown);
+            }
+          }, 0, false);
         };
 
         var _hide = $select.hide;

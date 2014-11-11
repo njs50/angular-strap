@@ -1,6 +1,6 @@
 /**
  * angular-strap
- * @version v2.1.3 - 2014-11-06
+ * @version v2.1.4-rc1 - 2014-11-11
  * @link http://mgcrea.github.io/angular-strap
  * @author Olivier Louvignes (olivier@mg-crea.com)
  * @license MIT License, http://www.opensource.org/licenses/MIT
@@ -206,7 +206,7 @@ angular.module('mgcrea.ngStrap.tooltip', ['mgcrea.ngStrap.helpers.dimensions'])
 
           scope.$emit(options.prefixEvent + '.show.before', $tooltip);
           var parent = options.container ? tipContainer : null;
-          var after = options.container ? null : element;
+          var after = options.container ? tipContainer[0].lastChild : element;
 
           // Hide any existing tipElement
           if(tipElement) destroyTipElement();
@@ -250,16 +250,15 @@ angular.module('mgcrea.ngStrap.tooltip', ['mgcrea.ngStrap.helpers.dimensions'])
           }
 
           if(options.autoClose) {
-            // Stop propagation when clicking inside tooltip
-            tipElement.on('click', function(event) {
-              event.stopPropagation();
-            });
-
-            // Hide when clicking outside tooltip
-            // use $timeout to setup this event, otherwise the 
-            // click on the element to show the popover will bubble 
-            // to the body and cause the popover to immediatly hide
+            // use timeout to hookup the events to prevent
+            // event bubbling from being processed imediately.
             $timeout(function() {
+              // Stop propagation when clicking inside tooltip
+              tipElement.on('click', function(event) {
+                event.stopPropagation();
+              });
+
+              // Hide when clicking outside tooltip
               $body.on('click', function() {
                 $tooltip.hide();
               });

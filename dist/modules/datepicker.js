@@ -1,6 +1,6 @@
 /**
  * angular-strap
- * @version v2.1.3 - 2014-11-06
+ * @version v2.1.4-rc1 - 2014-11-11
  * @link http://mgcrea.github.io/angular-strap
  * @author Olivier Louvignes (olivier@mg-crea.com)
  * @license MIT License, http://www.opensource.org/licenses/MIT
@@ -217,10 +217,14 @@ angular.module('mgcrea.ngStrap.datepicker', ['mgcrea.ngStrap.helpers.dateParser'
         var _show = $datepicker.show;
         $datepicker.show = function() {
           _show();
-          $datepicker.$element.on(isTouch ? 'touchstart' : 'mousedown', $datepicker.$onMouseDown);
-          if(options.keyboard) {
-            element.on('keydown', $datepicker.$onKeyDown);
-          }
+          // use timeout to hookup the events to prevent 
+          // event bubbling from being processed imediately. 
+          $timeout(function() {
+            $datepicker.$element.on(isTouch ? 'touchstart' : 'mousedown', $datepicker.$onMouseDown);
+            if(options.keyboard) {
+              element.on('keydown', $datepicker.$onKeyDown);
+            }
+          }, 0, false);
         };
 
         var _hide = $datepicker.hide;
@@ -329,11 +333,16 @@ angular.module('mgcrea.ngStrap.datepicker', ['mgcrea.ngStrap.helpers.dateParser'
           // Null values should correctly reset the model value & validity
           if(!viewValue) {
             controller.$setValidity('date', true);
-            return;
+            // BREAKING CHANGE:
+            // return null (not undefined) when input value is empty, so angularjs 1.3 
+            // ngModelController can go ahead and run validators, like ngRequired
+            return null;
           }
           var parsedDate = dateParser.parse(viewValue, controller.$dateValue);
           if(!parsedDate || isNaN(parsedDate.getTime())) {
             controller.$setValidity('date', false);
+            // return undefined, causes ngModelController to 
+            // invalidate model value 
             return;
           } else {
             validateAgainstMinMaxDate(parsedDate);
@@ -368,14 +377,18 @@ angular.module('mgcrea.ngStrap.datepicker', ['mgcrea.ngStrap.helpers.dateParser'
           //   date = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
           // }
           controller.$dateValue = date;
-          return controller.$dateValue;
+          return getDateFormattedString();
         });
 
         // viewValue -> element
         controller.$render = function() {
           // console.warn('$render("%s"): viewValue=%o', element.attr('ng-model'), controller.$viewValue);
-          element.val(!controller.$dateValue || isNaN(controller.$dateValue.getTime()) ? '' : dateFilter(controller.$dateValue, options.dateFormat));
+          element.val(getDateFormattedString());
         };
+
+        function getDateFormattedString() {
+          return !controller.$dateValue || isNaN(controller.$dateValue.getTime()) ? '' : dateFilter(controller.$dateValue, options.dateFormat);
+        }
 
         // Garbage collection
         scope.$on('$destroy', function() {
